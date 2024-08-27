@@ -20,14 +20,34 @@
 package libheif
 
 // #cgo pkg-config: libheif
-// #include <stdlib.h>
-// #include <string.h>
-// #include <libheif/heif.h>
+/*
+#include <stdlib.h>
+#include <string.h>
+#include <libheif/heif.h>
+
+extern struct heif_error writeGo(void* data, size_t size, void* userdata);
+
+struct heif_error writeCgo(struct heif_context* ctx, const void* data, size_t size, void* userdata) {
+	struct heif_error err = writeGo((char*)data, size, userdata);
+	if (!err.message) {
+		switch (err.code) {
+			case heif_error_Ok:
+				err.message = "Success";
+				break;
+			default:
+				err.message = "Error writing";
+				break;
+		}
+	}
+	return err;
+}
+*/
 import "C"
 
 import (
 	"errors"
 	"fmt"
+	"io"
 	"runtime"
 	"unsafe"
 )
@@ -110,6 +130,32 @@ func (c *Context) NewEncoder(compression CompressionFormat) (*Encoder, error) {
 	}
 
 	return c.convertEncoderDescriptor(descriptors[0])
+}
+
+// Write saves the current image.
+func (c *Context) Write(w io.Writer) error {
+	defer runtime.KeepAlive(c)
+
+	writer := &C.struct_heif_writer{
+		writer_api_version: 1,
+
+		write: (*[0]byte)(C.writeCgo),
+	}
+	writerData := &writerData{
+		w: w,
+	}
+
+	var p runtime.Pinner
+	p.Pin(w)
+	defer p.Unpin()
+
+	err := C.heif_context_write(c.context, writer, unsafe.Pointer(writerData))
+	if writerData.err != nil {
+		// Bubble up error returned by passed io.Writer
+		return writerData.err
+	}
+
+	return convertHeifError(err)
 }
 
 // WriteToFile saves the current image to the given file.
