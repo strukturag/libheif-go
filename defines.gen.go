@@ -248,3 +248,11 @@ const (
 	ChromaUpsamplingNearestNeighbor ChromaUpsamplingAlgorithm = C.heif_chroma_upsampling_nearest_neighbor
 	ChromaUpsamplingBilinear        ChromaUpsamplingAlgorithm = C.heif_chroma_upsampling_bilinear
 )
+
+type EncoderParameterType C.enum_heif_encoder_parameter_type
+
+const (
+	EncoderParameterTypeInteger EncoderParameterType = C.heif_encoder_parameter_type_integer
+	EncoderParameterTypeBoolean EncoderParameterType = C.heif_encoder_parameter_type_boolean
+	EncoderParameterTypeString  EncoderParameterType = C.heif_encoder_parameter_type_string
+)

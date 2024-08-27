@@ -30,6 +30,7 @@ import (
 	"runtime"
 )
 
+// EncodingOptions contain options that are used for encoding images.
 type EncodingOptions struct {
 	options *C.struct_heif_encoding_options
 }
@@ -53,5 +54,6 @@ func NewEncodingOptions() (*EncodingOptions, error) {
 
 	runtime.SetFinalizer(options, freeHeifEncodingOptions)
 	options.options.version = 6
+	options.options.color_conversion_options.version = 1
 	return options, nil
 }

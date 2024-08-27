@@ -27,6 +27,7 @@ import "C"
 
 import (
 	"fmt"
+	"unsafe"
 )
 
 // formatVersion formats a numeric version of libheif encoded as BCD
@@ -64,10 +65,40 @@ func GetVersion() string {
 	return C.GoString(C.heif_get_version())
 }
 
+// HaveDecoderFormFormat checks if a decoder is available for the given format.
+// Note that the decoder still may not be able to decode all variants of that format.
+// You will have to query that further or just try to decode and check the returned error.
+func HaveDecoderFormFormat(format CompressionFormat) bool {
+	return C.heif_have_decoder_for_format(C.enum_heif_compression_format(format)) != 0
+}
+
+// HaveEncoderFormFormat checks if an encoder is available for the given format.
+// Note that the encoder may be limited to a certain subset of features (e.g. only 8 bit, only lossy).
+// You will have to query the specific capabilities further.
+func HaveEncoderFormFormat(format CompressionFormat) bool {
+	return C.heif_have_encoder_for_format(C.enum_heif_compression_format(format)) != 0
+}
+
 func convertItemIDs(ids []C.heif_item_id, count int) []int {
 	result := make([]int, count)
 	for i := 0; i < count; i++ {
 		result[i] = int(ids[i])
 	}
 	return result
+}
+
+func convertBool[T C.uchar | C.int](value bool) T { // nolint
+	if value {
+		return 1
+	}
+
+	return 0
+}
+
+func nextPointer[T any](value *T) *T {
+	return (*T)(unsafe.Pointer(uintptr(unsafe.Pointer(value)) + unsafe.Sizeof(value)))
+}
+
+func makePointer[T any](value T) *T {
+	return &value
 }

@@ -204,6 +204,7 @@ def main():
   outputDefines('heif_progress_step', data, out)
   outputDefines('heif_chroma_downsampling_algorithm', data, out)
   outputDefines('heif_chroma_upsampling_algorithm', data, out)
+  outputDefines('heif_encoder_parameter_type', data, out)
 
   with open(output_file, 'w') as fp:
     print(out.getvalue().strip(), file=fp)
