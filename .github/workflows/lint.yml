@@ -1,0 +1,62 @@
+name: lint
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/lint.yml'
+      - '.golangci.yml'
+      - '**.go'
+      - 'go.*'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/lint.yml'
+      - '.golangci.yml'
+      - '**.go'
+      - 'go.*'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: golang
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install libheif-dev
+
+      - name: lint
+        uses: golangci/golangci-lint-action@v6.1.0
+        with:
+          version: latest
+          args: --timeout=2m0s
+          skip-cache: true
+
+  dependencies:
+    name: dependencies
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+
+      - name: Check minimum supported version of Go
+        run: |
+          go mod tidy -go=1.21 -compat=1.21
+
+      - name: Check go.mod / go.sum
+        run: |
+          git add go.*
+          git diff --cached --exit-code go.*
