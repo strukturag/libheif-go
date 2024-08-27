@@ -65,17 +65,17 @@ func GetVersion() string {
 	return C.GoString(C.heif_get_version())
 }
 
-// HaveDecoderFormFormat checks if a decoder is available for the given format.
+// HaveDecoderForFormat checks if a decoder is available for the given format.
 // Note that the decoder still may not be able to decode all variants of that format.
 // You will have to query that further or just try to decode and check the returned error.
-func HaveDecoderFormFormat(format CompressionFormat) bool {
+func HaveDecoderForFormat(format CompressionFormat) bool {
 	return C.heif_have_decoder_for_format(C.enum_heif_compression_format(format)) != 0
 }
 
-// HaveEncoderFormFormat checks if an encoder is available for the given format.
+// HaveEncoderForFormat checks if an encoder is available for the given format.
 // Note that the encoder may be limited to a certain subset of features (e.g. only 8 bit, only lossy).
 // You will have to query the specific capabilities further.
-func HaveEncoderFormFormat(format CompressionFormat) bool {
+func HaveEncoderForFormat(format CompressionFormat) bool {
 	return C.heif_have_encoder_for_format(C.enum_heif_compression_format(format)) != 0
 }
 
