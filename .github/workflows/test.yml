@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install libheif-dev
+          sudo apt-get -y install libheif-dev libheif-plugin-x265 libheif-plugin-aomenc
 
       - name: Run tests
         run: |
