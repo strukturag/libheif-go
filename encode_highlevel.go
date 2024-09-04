@@ -200,8 +200,60 @@ func imageFromYCbCr(i *image.YCbCr) (*Image, error) {
 	return out, nil
 }
 
+// EncoderParameterSetter is a function that can configure an encoder.
+type EncoderParameterSetter func(encoder *Encoder) error
+
+// SetEncoderQuality returns a function that sets the quality of an encoder.
+func SetEncoderQuality(quality int) EncoderParameterSetter {
+	return func(encoder *Encoder) error {
+		return encoder.SetQuality(quality)
+	}
+}
+
+// SetEncoderLossless returns a function that sets the lossless mode of an encoder.
+func SetEncoderLossless(lossless LosslessMode) EncoderParameterSetter {
+	return func(encoder *Encoder) error {
+		return encoder.SetLossless(lossless)
+	}
+}
+
+// SetEncoderLoggingLevel returns a function that sets the logging level of an encoder.
+func SetEncoderLoggingLevel(level LoggingLevel) EncoderParameterSetter {
+	return func(encoder *Encoder) error {
+		return encoder.SetLoggingLevel(level)
+	}
+}
+
+// SetEncoderParameterBool returns a function that sets a boolean parameter in an encoder.
+func SetEncoderParameterBool(name string, value bool) EncoderParameterSetter {
+	return func(encoder *Encoder) error {
+		return encoder.SetParameterBool(name, value)
+	}
+}
+
+// SetEncoderParameterInteger returns a function that sets an integer parameter in an encoder.
+func SetEncoderParameterInteger(name string, value int) EncoderParameterSetter {
+	return func(encoder *Encoder) error {
+		return encoder.SetParameterInteger(name, value)
+	}
+}
+
+// SetEncoderParameterString returns a function that sets a string parameter in an encoder.
+func SetEncoderParameterString(name string, value string) EncoderParameterSetter {
+	return func(encoder *Encoder) error {
+		return encoder.SetParameterString(name, value)
+	}
+}
+
+// SetEncoderParameter returns a function that sets an arbitrary parameter in an encoder.
+func SetEncoderParameter(name string, value string) EncoderParameterSetter {
+	return func(encoder *Encoder) error {
+		return encoder.SetParameter(name, value)
+	}
+}
+
 // EncodeFromImage is a high-level function to encode a Go Image to a new Context.
-func EncodeFromImage(img image.Image, compression CompressionFormat, quality int, lossless LosslessMode, logging LoggingLevel) (*Context, error) {
+func EncodeFromImage(img image.Image, compression CompressionFormat, params ...EncoderParameterSetter) (*Context, error) {
 	if err := checkLibraryVersion(); err != nil {
 		return nil, err
 	}
@@ -253,14 +305,10 @@ func EncodeFromImage(img image.Image, compression CompressionFormat, quality int
 		return nil, fmt.Errorf("failed to create encoder: %v", err)
 	}
 
-	if err := enc.SetQuality(quality); err != nil {
-		return nil, fmt.Errorf("failed to set quality: %v", err)
-	}
-	if err := enc.SetLossless(lossless); err != nil {
-		return nil, fmt.Errorf("failed to set lossless mode: %v", err)
-	}
-	if err := enc.SetLoggingLevel(logging); err != nil {
-		return nil, fmt.Errorf("failed to set logging level: %v", err)
+	for _, param := range params {
+		if err := param(enc); err != nil {
+			return nil, fmt.Errorf("error setting parameter: %w", err)
+		}
 	}
 
 	encOpts, err := NewEncodingOptions()
