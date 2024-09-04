@@ -51,6 +51,26 @@ func imageFromRGBA(i *image.RGBA) (*Image, error) {
 	return out, nil
 }
 
+func imageFromNRGBA(i *image.NRGBA) (*Image, error) {
+	min := i.Bounds().Min
+	max := i.Bounds().Max
+	w := max.X - min.X
+	h := max.Y - min.Y
+
+	out, err := NewImage(w, h, ColorspaceRGB, ChromaInterleavedRGBA)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create image: %v", err)
+	}
+
+	p, err := out.NewPlane(ChannelInterleaved, w, h, 8)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add plane: %v", err)
+	}
+	p.setData([]byte(i.Pix), w*4)
+
+	return out, nil
+}
+
 func imageFromRGBA64(i *image.RGBA64) (*Image, error) {
 	min := i.Bounds().Min
 	max := i.Bounds().Max
@@ -193,6 +213,12 @@ func EncodeFromImage(img image.Image, compression CompressionFormat, quality int
 		return nil, fmt.Errorf("unsupported image type: %T", i)
 	case *image.RGBA:
 		tmp, err := imageFromRGBA(i)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create image: %v", err)
+		}
+		out = tmp
+	case *image.NRGBA:
+		tmp, err := imageFromNRGBA(i)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create image: %v", err)
 		}
