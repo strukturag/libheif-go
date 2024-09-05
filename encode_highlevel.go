@@ -153,6 +153,8 @@ func imageFromYCbCr(i *image.YCbCr) (*Image, error) {
 	switch sr := i.SubsampleRatio; sr {
 	case image.YCbCrSubsampleRatio420:
 		cm = Chroma420
+	case image.YCbCrSubsampleRatio422:
+		cm = Chroma422
 	case image.YCbCrSubsampleRatio444:
 		cm = Chroma444
 	default:
@@ -180,6 +182,18 @@ func imageFromYCbCr(i *image.YCbCr) (*Image, error) {
 		}
 		pCb.setData([]byte(i.Cb), i.CStride)
 		pCr, err := out.NewPlane(ChannelCr, halfW, halfH, depth)
+		if err != nil {
+			return nil, fmt.Errorf("failed to add Cr plane: %v", err)
+		}
+		pCr.setData([]byte(i.Cr), i.CStride)
+	case Chroma422:
+		halfW := (w + 1) / 2
+		pCb, err := out.NewPlane(ChannelCb, halfW, h, depth)
+		if err != nil {
+			return nil, fmt.Errorf("failed to add Cb plane: %v", err)
+		}
+		pCb.setData([]byte(i.Cb), i.CStride)
+		pCr, err := out.NewPlane(ChannelCr, halfW, h, depth)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add Cr plane: %v", err)
 		}
