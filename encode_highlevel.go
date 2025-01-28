@@ -71,7 +71,7 @@ func imageFromNRGBA(i *image.NRGBA) (*Image, error) {
 	return out, nil
 }
 
-func imageFromRGBA64(i *image.RGBA64) (*Image, error) {
+func imageFromRGBA64(i *image.RGBA64, compression CompressionFormat) (*Image, error) {
 	min := i.Bounds().Min
 	max := i.Bounds().Max
 	w := max.X - min.X
@@ -82,42 +82,117 @@ func imageFromRGBA64(i *image.RGBA64) (*Image, error) {
 		return nil, fmt.Errorf("failed to create image: %v", err)
 	}
 
-	p, err := out.NewPlane(ChannelInterleaved, w, h, 10)
+	var depth int
+	switch compression {
+	case CompressionAV1:
+		depth = 12
+	case CompressionHEVC:
+		depth = 10
+	default:
+		depth = 16
+	}
+	p, err := out.NewPlane(ChannelInterleaved, w, h, depth)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add plane: %v", err)
 	}
 
-	pix := make([]byte, w*h*8)
-	read_pos := 0
-	write_pos := 0
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			r := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
-			r = r >> 6
-			pix[write_pos] = byte(r >> 8)
-			pix[write_pos+1] = byte(r & 0xff)
-			read_pos += 2
-			g := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
-			g = g >> 6
-			pix[write_pos+2] = byte(g >> 8)
-			pix[write_pos+3] = byte(g & 0xff)
-			read_pos += 2
-			b := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
-			b = b >> 6
-			pix[write_pos+4] = byte(b >> 8)
-			pix[write_pos+5] = byte(b & 0xff)
-			read_pos += 2
-			a := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
-			a = a >> 6
-			pix[write_pos+6] = byte(a >> 8)
-			pix[write_pos+7] = byte(a & 0xff)
-			pix[write_pos+6] = byte(a >> 8)
-			pix[write_pos+7] = byte(a & 0xff)
-			read_pos += 2
-			write_pos += 8
+	if depth == 16 {
+		p.setData(i.Pix, w*8)
+	} else {
+		shift := 16 - depth
+		pix := make([]byte, w*h*8)
+		read_pos := 0
+		write_pos := 0
+		for y := 0; y < h; y++ {
+			for x := 0; x < w; x++ {
+				r := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
+				r = r >> shift
+				pix[write_pos] = byte(r >> 8)
+				pix[write_pos+1] = byte(r & 0xff)
+				read_pos += 2
+				g := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
+				g = g >> shift
+				pix[write_pos+2] = byte(g >> 8)
+				pix[write_pos+3] = byte(g & 0xff)
+				read_pos += 2
+				b := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
+				b = b >> shift
+				pix[write_pos+4] = byte(b >> 8)
+				pix[write_pos+5] = byte(b & 0xff)
+				read_pos += 2
+				a := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
+				a = a >> shift
+				pix[write_pos+6] = byte(a >> 8)
+				pix[write_pos+7] = byte(a & 0xff)
+				read_pos += 2
+				write_pos += 8
+			}
 		}
+		p.setData(pix, w*8)
 	}
-	p.setData(pix, w*8)
+
+	return out, nil
+}
+
+func imageFromNRGBA64(i *image.NRGBA64, compression CompressionFormat) (*Image, error) {
+	min := i.Bounds().Min
+	max := i.Bounds().Max
+	w := max.X - min.X
+	h := max.Y - min.Y
+
+	out, err := NewImage(w, h, ColorspaceRGB, ChromaInterleavedRRGGBBAA_BE)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create image: %v", err)
+	}
+
+	var depth int
+	switch compression {
+	case CompressionAV1:
+		depth = 12
+	case CompressionHEVC:
+		depth = 10
+	default:
+		depth = 16
+	}
+	p, err := out.NewPlane(ChannelInterleaved, w, h, depth)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add plane: %v", err)
+	}
+
+	if depth == 16 {
+		p.setData(i.Pix, w*8)
+	} else {
+		shift := 16 - depth
+		pix := make([]byte, w*h*8)
+		read_pos := 0
+		write_pos := 0
+		for y := 0; y < h; y++ {
+			for x := 0; x < w; x++ {
+				r := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
+				r = r >> shift
+				pix[write_pos] = byte(r >> 8)
+				pix[write_pos+1] = byte(r & 0xff)
+				read_pos += 2
+				g := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
+				g = g >> shift
+				pix[write_pos+2] = byte(g >> 8)
+				pix[write_pos+3] = byte(g & 0xff)
+				read_pos += 2
+				b := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
+				b = b >> shift
+				pix[write_pos+4] = byte(b >> 8)
+				pix[write_pos+5] = byte(b & 0xff)
+				read_pos += 2
+				a := (uint16(i.Pix[read_pos]) << 8) | uint16(i.Pix[read_pos+1])
+				a = a >> shift
+				pix[write_pos+6] = byte(a >> 8)
+				pix[write_pos+7] = byte(a & 0xff)
+				read_pos += 2
+				write_pos += 8
+			}
+		}
+		p.setData(pix, w*8)
+	}
 
 	return out, nil
 }
@@ -290,7 +365,13 @@ func EncodeFromImage(img image.Image, compression CompressionFormat, params ...E
 		}
 		out = tmp
 	case *image.RGBA64:
-		tmp, err := imageFromRGBA64(i)
+		tmp, err := imageFromRGBA64(i, compression)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create image: %v", err)
+		}
+		out = tmp
+	case *image.NRGBA64:
+		tmp, err := imageFromNRGBA64(i, compression)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create image: %v", err)
 		}
