@@ -342,73 +342,73 @@ func SetEncoderParameter(name string, value string) EncoderParameterSetter {
 }
 
 // EncodeFromImage is a high-level function to encode a Go Image to a new Context.
-func EncodeFromImage(img image.Image, compression CompressionFormat, params ...EncoderParameterSetter) (*Context, error) {
+func EncodeFromImage(img image.Image, compression CompressionFormat, params ...EncoderParameterSetter) (*Context, *ImageHandle, error) {
 	if err := checkLibraryVersion(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var out *Image
 
 	switch i := img.(type) {
 	default:
-		return nil, fmt.Errorf("unsupported image type: %T", i)
+		return nil, nil, fmt.Errorf("unsupported image type: %T", i)
 	case *image.RGBA:
 		tmp, err := imageFromRGBA(i)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create image: %v", err)
+			return nil, nil, fmt.Errorf("failed to create image: %v", err)
 		}
 		out = tmp
 	case *image.NRGBA:
 		tmp, err := imageFromNRGBA(i)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create image: %v", err)
+			return nil, nil, fmt.Errorf("failed to create image: %v", err)
 		}
 		out = tmp
 	case *image.RGBA64:
 		tmp, err := imageFromRGBA64(i, compression)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create image: %v", err)
+			return nil, nil, fmt.Errorf("failed to create image: %v", err)
 		}
 		out = tmp
 	case *image.NRGBA64:
 		tmp, err := imageFromNRGBA64(i, compression)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create image: %v", err)
+			return nil, nil, fmt.Errorf("failed to create image: %v", err)
 		}
 		out = tmp
 	case *image.Gray:
 		tmp, err := imageFromGray(i)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create image: %v", err)
+			return nil, nil, fmt.Errorf("failed to create image: %v", err)
 		}
 		out = tmp
 	case *image.YCbCr:
 		tmp, err := imageFromYCbCr(i)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create image: %v", err)
+			return nil, nil, fmt.Errorf("failed to create image: %v", err)
 		}
 		out = tmp
 	}
 
 	ctx, err := NewContext()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create HEIF context: %v", err)
+		return nil, nil, fmt.Errorf("failed to create HEIF context: %v", err)
 	}
 
 	enc, err := ctx.NewEncoder(compression)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create encoder: %v", err)
+		return nil, nil, fmt.Errorf("failed to create encoder: %v", err)
 	}
 
 	for _, param := range params {
 		if err := param(enc); err != nil {
-			return nil, fmt.Errorf("error setting parameter: %w", err)
+			return nil, nil, fmt.Errorf("error setting parameter: %w", err)
 		}
 	}
 
 	encOpts, err := NewEncodingOptions()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get encoding options: %v", err)
+		return nil, nil, fmt.Errorf("failed to get encoding options: %v", err)
 	}
 
 	defer runtime.KeepAlive(ctx)
@@ -419,9 +419,9 @@ func EncodeFromImage(img image.Image, compression CompressionFormat, params ...E
 	var handle ImageHandle
 	err2 := C.heif_context_encode_image(ctx.context, out.image, enc.encoder, encOpts.options, &handle.handle)
 	if err := convertHeifError(err2); err != nil {
-		return nil, fmt.Errorf("failed to encode image: %v", err)
+		return nil, nil, fmt.Errorf("failed to encode image: %v", err)
 	}
 
 	runtime.SetFinalizer(&handle, freeHeifImageHandle)
-	return ctx, nil
+	return ctx, &handle, nil
 }

@@ -69,6 +69,9 @@ func CheckHeifImage(t *testing.T, handle *ImageHandle, thumbnail bool) {
 				})
 			}
 		}
+
+		meta_ids := handle.GetMetadataBlockIDs("")
+		assert.Empty(meta_ids)
 	})
 
 	decodeTests := []decodeTest{

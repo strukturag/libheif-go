@@ -27,6 +27,7 @@ import "C"
 
 import (
 	"runtime"
+	"unsafe"
 )
 
 // ImageHandle contains information about an image in a libheif Context.
@@ -158,4 +159,51 @@ func (h *ImageHandle) DecodeImage(colorspace Colorspace, chroma Chroma, options 
 
 	runtime.SetFinalizer(&image, freeHeifImage)
 	return &image, nil
+}
+
+func (h *ImageHandle) GetMetadataBlockIDs(filter string) []int {
+	defer runtime.KeepAlive(h)
+
+	var f *C.char
+	if filter != "" {
+		f = C.CString(filter)
+		defer C.free(unsafe.Pointer(f))
+	}
+	num := int(C.heif_image_handle_get_number_of_metadata_blocks(h.handle, f))
+	if num == 0 {
+		return nil
+	}
+
+	ids := make([]C.heif_item_id, num)
+	C.heif_image_handle_get_list_of_metadata_block_IDs(h.handle, f, &ids[0], C.int(num))
+	return convertItemIDs(ids, num)
+}
+
+func (h *ImageHandle) GetMetadataContentType(block_id int) string {
+	defer runtime.KeepAlive(h)
+
+	ct := C.heif_image_handle_get_metadata_content_type(h.handle, C.heif_item_id(block_id))
+	if ct == nil {
+		return ""
+	}
+
+	return C.GoString(ct)
+}
+
+func (h *ImageHandle) GetMetadata(block_id int) ([]byte, error) {
+	defer runtime.KeepAlive(h)
+
+	var err C.struct_heif_error
+	var result []byte
+	if size := C.heif_image_handle_get_metadata_size(h.handle, C.heif_item_id(block_id)); size > 0 {
+		result = make([]byte, size)
+		err = C.heif_image_handle_get_metadata(h.handle, C.heif_item_id(block_id), unsafe.Pointer(&result[0]))
+	} else {
+		err = C.heif_image_handle_get_metadata(h.handle, C.heif_item_id(block_id), nil)
+	}
+	if err := convertHeifError(err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

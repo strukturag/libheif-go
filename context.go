@@ -236,3 +236,40 @@ func (c *Context) GetImageHandle(id int) (*ImageHandle, error) {
 	runtime.SetFinalizer(&handle, freeHeifImageHandle)
 	return &handle, nil
 }
+
+func (c *Context) AddExifMetadata(handle *ImageHandle, data []byte) error {
+	runtime.KeepAlive(c)
+	runtime.KeepAlive(handle)
+
+	dataPtr := unsafe.Pointer(&data[0])
+	err := C.heif_context_add_exif_metadata(c.context, handle.handle, dataPtr, C.int(len(data)))
+	return convertHeifError(err)
+}
+
+func (c *Context) AddXmpMetadata(handle *ImageHandle, data []byte) error {
+	runtime.KeepAlive(c)
+	runtime.KeepAlive(handle)
+
+	dataPtr := unsafe.Pointer(&data[0])
+	err := C.heif_context_add_XMP_metadata(c.context, handle.handle, dataPtr, C.int(len(data)))
+	return convertHeifError(err)
+}
+
+func (c *Context) AddGenericMetadata(handle *ImageHandle, data []byte, item_type string, content_type string) error {
+	runtime.KeepAlive(c)
+	runtime.KeepAlive(handle)
+
+	dataPtr := unsafe.Pointer(&data[0])
+	var it *C.char
+	if item_type != "" {
+		it = C.CString(item_type)
+		defer C.free(unsafe.Pointer(it))
+	}
+	var ct *C.char
+	if content_type != "" {
+		ct = C.CString(content_type)
+		defer C.free(unsafe.Pointer(ct))
+	}
+	err := C.heif_context_add_generic_metadata(c.context, handle.handle, dataPtr, C.int(len(data)), it, ct)
+	return convertHeifError(err)
+}

@@ -61,7 +61,7 @@ func TestEncoder(t *testing.T) {
 			require.True(HaveEncoderForFormat(codec))
 
 			img := loadImage(t, "testdata/example-1.jpg")
-			ctx, err := EncodeFromImage(img, codec,
+			ctx, _, err := EncodeFromImage(img, codec,
 				SetEncoderQuality(75),
 				SetEncoderLossless(LosslessModeDisabled),
 				SetEncoderLoggingLevel(LoggingLevelFull),
