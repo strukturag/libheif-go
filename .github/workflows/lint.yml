@@ -36,7 +36,7 @@ jobs:
           sudo apt-get -y install libheif-dev
 
       - name: lint
-        uses: golangci/golangci-lint-action@v6.1.1
+        uses: golangci/golangci-lint-action@v6.3.0
         with:
           version: latest
           args: --timeout=2m0s
