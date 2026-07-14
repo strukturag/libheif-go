@@ -22,7 +22,7 @@ package libheif
 // #cgo pkg-config: libheif
 // #include <stdlib.h>
 // #include <string.h>
-// #include <libheif/heif.h>
+// #include "compat.h"
 import "C"
 
 import (
@@ -69,14 +69,14 @@ func GetVersion() string {
 // Note that the decoder still may not be able to decode all variants of that format.
 // You will have to query that further or just try to decode and check the returned error.
 func HaveDecoderForFormat(format CompressionFormat) bool {
-	return C.heif_have_decoder_for_format(C.enum_heif_compression_format(format)) != 0
+	return C.go_heif_have_decoder_for_format(C.uint32_t(format)) != 0
 }
 
 // HaveEncoderForFormat checks if an encoder is available for the given format.
 // Note that the encoder may be limited to a certain subset of features (e.g. only 8 bit, only lossy).
 // You will have to query the specific capabilities further.
 func HaveEncoderForFormat(format CompressionFormat) bool {
-	return C.heif_have_encoder_for_format(C.enum_heif_compression_format(format)) != 0
+	return C.go_heif_have_encoder_for_format(C.uint32_t(format)) != 0
 }
 
 func convertItemIDs(ids []C.heif_item_id, count int) []int {

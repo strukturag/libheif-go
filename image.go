@@ -22,7 +22,7 @@ package libheif
 // #cgo pkg-config: libheif
 // #include <stdlib.h>
 // #include <string.h>
-// #include <libheif/heif.h>
+// #include "compat.h"
 import "C"
 
 import (
@@ -45,7 +45,7 @@ func NewImage(width, height int, colorspace Colorspace, chroma Chroma) (*Image, 
 	}
 
 	var image Image
-	err := C.heif_image_create(C.int(width), C.int(height), uint32(colorspace), uint32(chroma), &image.image)
+	err := C.go_heif_image_create(C.int(width), C.int(height), C.uint32_t(colorspace), C.uint32_t(chroma), &image.image)
 	if err := convertHeifError(err); err != nil {
 		return nil, err
 	}
@@ -76,14 +76,14 @@ func (img *Image) GetChromaFormat() Chroma {
 func (img *Image) GetWidth(channel Channel) int {
 	defer runtime.KeepAlive(img)
 
-	return int(C.heif_image_get_width(img.image, uint32(channel)))
+	return int(C.go_heif_image_get_width(img.image, C.uint32_t(channel)))
 }
 
 // GetHeight returns the width of the given channel of the image.
 func (img *Image) GetHeight(channel Channel) int {
 	defer runtime.KeepAlive(img)
 
-	return int(C.heif_image_get_height(img.image, uint32(channel)))
+	return int(C.go_heif_image_get_height(img.image, C.uint32_t(channel)))
 }
 
 // GetBitsPerPixel returns the bits per pixel of the given channel of the image.
@@ -93,7 +93,7 @@ func (img *Image) GetHeight(channel Channel) int {
 func (img *Image) GetBitsPerPixel(channel Channel) int {
 	defer runtime.KeepAlive(img)
 
-	return int(C.heif_image_get_bits_per_pixel(img.image, uint32(channel)))
+	return int(C.go_heif_image_get_bits_per_pixel(img.image, C.uint32_t(channel)))
 }
 
 // GetBitsPerPixelRange returns the bits per pixel given channel of the image.
@@ -103,7 +103,7 @@ func (img *Image) GetBitsPerPixel(channel Channel) int {
 func (img *Image) GetBitsPerPixelRange(channel Channel) int {
 	defer runtime.KeepAlive(img)
 
-	return int(C.heif_image_get_bits_per_pixel_range(img.image, uint32(channel)))
+	return int(C.go_heif_image_get_bits_per_pixel_range(img.image, C.uint32_t(channel)))
 }
 
 // GetImage convers the image to a Go Image object.
@@ -469,13 +469,13 @@ func (img *Image) GetImage() (image.Image, error) {
 func (img *Image) GetPlane(channel Channel) (*ImageAccess, error) {
 	defer runtime.KeepAlive(img)
 
-	height := C.heif_image_get_height(img.image, uint32(channel))
+	height := C.go_heif_image_get_height(img.image, C.uint32_t(channel))
 	if height == -1 {
 		return nil, fmt.Errorf("No such channel %v", channel)
 	}
 
 	var stride C.int
-	plane := C.heif_image_get_plane(img.image, uint32(channel), &stride)
+	plane := C.go_heif_image_get_plane(img.image, C.uint32_t(channel), &stride)
 	if plane == nil {
 		return nil, fmt.Errorf("No such channel %v", channel)
 	}
@@ -497,7 +497,7 @@ func (img *Image) GetPlane(channel Channel) (*ImageAccess, error) {
 func (img *Image) NewPlane(channel Channel, width, height, depth int) (*ImageAccess, error) {
 	defer runtime.KeepAlive(img)
 
-	err := C.heif_image_add_plane(img.image, uint32(channel), C.int(width), C.int(height), C.int(depth))
+	err := C.go_heif_image_add_plane(img.image, C.uint32_t(channel), C.int(width), C.int(height), C.int(depth))
 	if err := convertHeifError(err); err != nil {
 		return nil, err
 	}
