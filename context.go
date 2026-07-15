@@ -23,7 +23,7 @@ package libheif
 /*
 #include <stdlib.h>
 #include <string.h>
-#include <libheif/heif.h>
+#include "compat.h"
 
 extern struct heif_error writeGo(void* data, size_t size, void* userdata);
 
@@ -124,7 +124,7 @@ func (c *Context) NewEncoder(compression CompressionFormat) (*Encoder, error) {
 
 	const max = 1
 	descriptors := make([]*C.struct_heif_encoder_descriptor, max)
-	num := int(C.heif_context_get_encoder_descriptors(c.context, uint32(compression), nil, &descriptors[0], C.int(max)))
+	num := int(C.go_heif_context_get_encoder_descriptors(c.context, C.uint32_t(compression), nil, &descriptors[0], C.int(max)))
 	if num == 0 {
 		return nil, fmt.Errorf("no encoder for compression %v", compression)
 	}

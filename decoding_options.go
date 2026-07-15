@@ -22,7 +22,7 @@ package libheif
 // #cgo pkg-config: libheif
 // #include <stdlib.h>
 // #include <string.h>
-// #include <libheif/heif.h>
+// #include "compat.h"
 import "C"
 
 import (
@@ -125,22 +125,22 @@ func (o *DecodingOptions) GetDecoderId() string {
 
 // SetChromaDownsamplingAlgorithm sets the chroma downsampling algorithm to use.
 func (o *DecodingOptions) SetChromaDownsamplingAlgorithm(algorithm ChromaDownsamplingAlgorithm) {
-	o.options.color_conversion_options.preferred_chroma_downsampling_algorithm = uint32(algorithm)
+	C.go_heif_set_preferred_chroma_downsampling_algorithm(o.options, C.uint32_t(algorithm))
 }
 
 // GetChromaDownsamplingAlgorithm returns the chroma downsampling algorithm to use.
 func (o *DecodingOptions) GetChromaDownsamplingAlgorithm() ChromaDownsamplingAlgorithm {
-	return ChromaDownsamplingAlgorithm(o.options.color_conversion_options.preferred_chroma_downsampling_algorithm)
+	return ChromaDownsamplingAlgorithm(C.go_heif_get_preferred_chroma_downsampling_algorithm(o.options))
 }
 
 // SetChromaUpsamplingAlgorithm sets the chroma upsampling algorithm to use.
 func (o *DecodingOptions) SetChromaUpsamplingAlgorithm(algorithm ChromaUpsamplingAlgorithm) {
-	o.options.color_conversion_options.preferred_chroma_upsampling_algorithm = uint32(algorithm)
+	C.go_heif_set_preferred_chroma_upsampling_algorithm(o.options, C.uint32_t(algorithm))
 }
 
 // GetChromaUpsamplingAlgorithm returns the chroma upsampling algorithm to use.
 func (o *DecodingOptions) GetChromaUpsamplingAlgorithm() ChromaUpsamplingAlgorithm {
-	return ChromaUpsamplingAlgorithm(o.options.color_conversion_options.preferred_chroma_upsampling_algorithm)
+	return ChromaUpsamplingAlgorithm(C.go_heif_get_preferred_chroma_upsampling_algorithm(o.options))
 }
 
 // SetOnlyUsePreferredChromaAlgorithm enforces to use the preferred algorithm.

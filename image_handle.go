@@ -22,7 +22,7 @@ package libheif
 // #cgo pkg-config: libheif
 // #include <stdlib.h>
 // #include <string.h>
-// #include <libheif/heif.h>
+// #include "compat.h"
 import "C"
 
 import (
@@ -152,7 +152,7 @@ func (h *ImageHandle) DecodeImage(colorspace Colorspace, chroma Chroma, options 
 		opt = options.options
 	}
 
-	err := C.heif_decode_image(h.handle, &image.image, uint32(colorspace), uint32(chroma), opt)
+	err := C.go_heif_decode_image(h.handle, &image.image, C.uint32_t(colorspace), C.uint32_t(chroma), opt)
 	if err := convertHeifError(err); err != nil {
 		return nil, err
 	}
